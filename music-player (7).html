@@ -1,0 +1,1823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Phases</title>
+<style>
+  :root {
+    --bg-black: #0a0a0a;
+    --bg-elevated: #181818;
+    --green: #1ed760;
+    --text-white: #ffffff;
+    --text-muted: #a7a7a7;
+    --text-faint: #6a6a6a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    min-height: 100dvh;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--bg-black);
+    color: var(--text-white);
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 20px 16px;
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  /* Only center vertically on genuinely wide (desktop) screens.
+     Phones — any height — always stay top-aligned so the back
+     button and top bar are never pushed above the visible area. */
+  @media (min-width: 640px) {
+    body { align-items: center; }
+  }
+
+  .app-shell {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  .screen { display: none; width: 100%; }
+  .screen.active { display: flex; flex-direction: column; align-items: center; }
+
+  /* ================= INTRO SCREEN ================= */
+  #screenIntro {
+    text-align: center;
+    width: 100%;
+    gap: 22px;
+    animation: fadeIn 0.6s ease;
+  }
+
+  .intro-icon {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #1e3d2a, #0a0a0a 75%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 1px rgba(30,215,96,0.25), 0 0 40px rgba(30,215,96,0.15);
+    margin: 0 auto;
+  }
+
+  .intro-title {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+
+  .intro-sub {
+    font-size: 14.5px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    max-width: 300px;
+    margin: 0 auto;
+  }
+
+  .begin-btn {
+    margin-top: 8px;
+    background: var(--green);
+    color: #05230f;
+    border: none;
+    font-size: 14px;
+    font-weight: 800;
+    padding: 13px 34px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: transform 0.12s ease, background 0.15s ease;
+    letter-spacing: 0.02em;
+  }
+  .begin-btn:hover { background: #24e56b; transform: scale(1.03); }
+  .begin-btn:active { transform: scale(0.97); }
+
+  /* ================= PHASE SELECTOR ================= */
+  #screenPhases {
+    width: 100%;
+    gap: 18px;
+  }
+
+  .phases-header {
+    text-align: center;
+    margin-bottom: 6px;
+  }
+
+  .phases-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--green);
+    font-weight: 800;
+    margin-bottom: 6px;
+  }
+
+  .phases-title {
+    font-size: 21px;
+    font-weight: 800;
+  }
+
+  .phase-card {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--bg-elevated);
+    border-radius: 14px;
+    padding: 14px;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.06);
+    transition: background 0.15s ease, transform 0.12s ease, border-color 0.15s ease;
+    text-align: left;
+    color: var(--text-white);
+    font-family: inherit;
+  }
+  .phase-card:hover {
+    background: #212121;
+    border-color: rgba(30,215,96,0.3);
+    transform: translateY(-2px);
+  }
+  .phase-card:active { transform: scale(0.99); }
+
+  .phase-art {
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+  }
+
+  .phase-info { min-width: 0; flex: 1; }
+
+  .phase-label {
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 3px;
+  }
+
+  .phase-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: var(--text-white);
+  }
+
+  .phase-teaser {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+
+  .phase-arrow {
+    color: var(--text-faint);
+    flex-shrink: 0;
+  }
+
+  /* ================= PLAYER SCREEN ================= */
+  #screenPlayer.active { display: block; }
+
+  .app-wrap {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    margin: 0 auto;
+    animation: fadeIn 0.4s ease;
+  }
+
+  .player {
+    background: linear-gradient(180deg, #1f1f1f 0%, var(--bg-black) 55%);
+    border-radius: 16px;
+    padding: 28px 28px 24px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 22px;
+    position: relative;
+  }
+
+  .back-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-white);
+    opacity: 0.85;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+  .back-btn:hover { opacity: 1; }
+
+  .now-playing-label {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 700;
+  }
+
+  .album-art-wrap {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 26px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .track-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    gap: 12px;
+  }
+
+  .track-info { min-width: 0; }
+
+  .track-title {
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+  }
+
+  .track-artist {
+    font-size: 14px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .like-btn {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.15s ease, transform 0.15s ease;
+  }
+  .like-btn:hover { color: var(--text-white); }
+  .like-btn.liked { color: var(--green); }
+
+  .progress-section { margin-bottom: 14px; }
+
+  .progress-bar {
+    position: relative;
+    height: 4px;
+    background: rgba(255,255,255,0.28);
+    border-radius: 2px;
+    cursor: pointer;
+    margin-bottom: 8px;
+  }
+
+  .progress-fill {
+    position: absolute;
+    top: 0; left: 0;
+    height: 100%;
+    width: 0%;
+    background: var(--text-white);
+    border-radius: 2px;
+  }
+  .progress-bar:hover .progress-fill { background: var(--green); }
+
+  .progress-handle {
+    position: absolute;
+    top: 50%;
+    width: 12px;
+    height: 12px;
+    background: var(--text-white);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    left: 0%;
+    opacity: 0;
+    transition: opacity 0.1s ease;
+  }
+  .progress-bar:hover .progress-handle { opacity: 1; }
+
+  .time-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    margin-bottom: 22px;
+  }
+
+  .ctrl-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s ease, transform 0.1s ease;
+    padding: 6px;
+  }
+  .ctrl-btn:hover { color: var(--text-white); }
+  .ctrl-btn.active { color: var(--green); }
+
+  .play-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--text-white);
+    color: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.12s ease, background 0.15s ease;
+  }
+  .play-btn:hover { transform: scale(1.05); background: #f0f0f0; }
+  .play-btn:active { transform: scale(0.96); }
+
+  .bottom-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .device-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--green);
+    background: rgba(30,215,96,0.1);
+    padding: 6px 10px;
+    border-radius: 20px;
+  }
+
+  .vol-row { display: flex; align-items: center; gap: 8px; color: var(--text-muted); }
+
+  .vol-bar {
+    width: 70px;
+    height: 4px;
+    background: rgba(255,255,255,0.28);
+    border-radius: 2px;
+    position: relative;
+    cursor: pointer;
+  }
+  .vol-fill {
+    position: absolute; top:0; left:0; height:100%;
+    width: 70%;
+    background: var(--text-white);
+    border-radius: 2px;
+  }
+  .vol-bar:hover .vol-fill { background: var(--green); }
+
+  .lyrics-divider { height: 1px; background: rgba(255,255,255,0.08); margin: 22px 0 0; }
+
+  .lyrics-section {
+    margin-top: 18px;
+    padding: 4px 0 2px;
+    border-radius: 12px;
+    transition: box-shadow 0.6s ease;
+  }
+
+  .lyrics-section.attention {
+    animation: lyricsGlow 2.6s ease-in-out infinite;
+  }
+
+  @keyframes lyricsGlow {
+    0%, 100% { box-shadow: 0 0 0 rgba(30,215,96,0); }
+    50% { box-shadow: 0 0 26px rgba(30,215,96,0.18); }
+  }
+
+  .lyrics-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .lyrics-title {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    color: var(--text-white);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .edit-toggle {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: color 0.15s ease;
+  }
+  .edit-toggle:hover { color: var(--text-white); }
+
+  .lyrics-scroll {
+    max-height: 260px;
+    overflow-y: auto;
+    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
+    mask-image: linear-gradient(180deg, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
+    padding: 10px 0;
+  }
+  .lyrics-scroll::-webkit-scrollbar { width: 4px; }
+  .lyrics-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+
+  .lyrics-line {
+    font-size: 21px;
+    font-weight: 700;
+    line-height: 1.5;
+    color: rgba(255,255,255,0.3);
+    padding: 6px 10px;
+    margin: 2px 0;
+    border-radius: 8px;
+    transition: color 0.4s ease, background 0.4s ease, transform 0.3s ease;
+    cursor: pointer;
+  }
+  .lyrics-line:hover { color: rgba(255,255,255,0.65); }
+
+  .lyrics-line.active {
+    color: var(--text-white);
+    background: rgba(30,215,96,0.08);
+    transform: scale(1.03);
+    animation: linePulse 1.8s ease-in-out infinite;
+  }
+
+  @keyframes linePulse {
+    0%, 100% { text-shadow: 0 0 0 rgba(30,215,96,0); }
+    50% { text-shadow: 0 0 18px rgba(30,215,96,0.45); }
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 14px;
+    color: var(--text-faint);
+    padding: 22px 0 6px;
+  }
+  .empty-state svg { opacity: 0.5; }
+  .empty-state .empty-title { font-size: 14px; font-weight: 700; color: var(--text-muted); }
+  .empty-state .empty-sub { font-size: 12.5px; max-width: 260px; color: var(--text-faint); line-height: 1.5; }
+
+  .upload-actions { display: flex; gap: 10px; margin-top: 4px; }
+
+  .upload-btn, .save-btn, .cancel-btn {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.1s ease, background 0.15s ease;
+  }
+  .upload-btn:active, .save-btn:active { transform: scale(0.97); }
+  .upload-btn { background: var(--bg-elevated); color: var(--text-white); border: 1px solid rgba(255,255,255,0.14); }
+  .upload-btn:hover { background: #242424; }
+  .save-btn { background: var(--green); color: #05230f; }
+  .save-btn:hover { background: #24e56b; }
+  .save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .cancel-btn { background: transparent; color: var(--text-muted); }
+  .cancel-btn:hover { color: var(--text-white); }
+
+  .lyrics-textarea {
+    width: 100%;
+    min-height: 180px;
+    resize: vertical;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-white);
+    background: var(--bg-elevated);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+  .lyrics-textarea::placeholder { color: var(--text-faint); }
+  .lyrics-textarea:focus { outline: none; border-color: var(--green); }
+
+  .lyrics-footer-actions { display: flex; justify-content: flex-end; gap: 10px; }
+
+  .status-line {
+    font-size: 11px;
+    color: var(--text-faint);
+    margin-top: 10px;
+    text-align: center;
+    min-height: 14px;
+  }
+
+  .hidden-file-input { display: none; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+
+  @media (max-width: 400px) {
+    .player {
+      padding: 18px 16px 16px;
+      border-radius: 14px;
+    }
+    .track-title { font-size: 17px; }
+    .lyrics-line { font-size: 17px; padding: 6px 8px; }
+    .phase-card { padding: 12px; gap: 12px; }
+    .phase-art { width: 52px; height: 52px; }
+    .phase-title { font-size: 15px; }
+    .phases-title { font-size: 19px; }
+    .intro-title { font-size: 20px; }
+    .controls { gap: 12px; }
+    .play-btn { width: 52px; height: 52px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+
+<!-- ================= SCREEN 1: INTRO ================= -->
+<div class="screen active" id="screenIntro">
+  <div class="intro-icon">
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#1ed760" stroke-width="1.6">
+      <path d="M4 15v-3a8 8 0 0116 0v3"/>
+      <rect x="2" y="14" width="4" height="7" rx="1.5"/>
+      <rect x="18" y="14" width="4" height="7" rx="1.5"/>
+    </svg>
+  </div>
+  <div class="intro-title">Before you begin</div>
+  <div class="intro-sub">Put on your headphones and find a quiet place. This is meant to be heard — and read — closely.</div>
+  <button class="begin-btn" id="beginBtn">I'm ready</button>
+</div>
+
+<!-- ================= SCREEN 2: PHASE SELECTOR ================= -->
+<div class="screen" id="screenPhases">
+  <div class="phases-header">
+    <div class="phases-eyebrow">Three parts, one story</div>
+    <div class="phases-title">Choose a phase</div>
+  </div>
+  <div id="phaseList" style="width:100%; display:flex; flex-direction:column; gap:12px;"></div>
+</div>
+
+<!-- ================= SCREEN 3: PLAYER ================= -->
+<div class="screen" id="screenPlayer">
+  <div class="app-wrap">
+    <div class="player">
+      <div class="top-bar">
+        <button class="back-btn" id="backBtn" aria-label="Back to phases">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <span class="now-playing-label" id="phaseLabel">Phase I</span>
+        <span style="width:18px;"></span>
+      </div>
+
+      <div class="album-art-wrap" id="albumArtWrap">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor" opacity="0.6" style="color:#eaf6ee;"><path d="M12 3v10.55A4 4 0 1014 17V7h4V3h-6z"/></svg>
+      </div>
+
+      <div class="track-row">
+        <div class="track-info">
+          <div class="track-title" id="trackTitle">The Departure</div>
+          <div class="track-artist" id="trackArtist">Your Name</div>
+        </div>
+        <button class="like-btn" id="likeBtn" aria-label="Like this song">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.6l-1-1a5.5 5.5 0 00-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 000-7.8z"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="progress-section">
+        <div class="progress-bar" id="progressBar">
+          <div class="progress-fill" id="progressFill"></div>
+          <div class="progress-handle" id="progressHandle"></div>
+        </div>
+        <div class="time-row">
+          <span id="curTime">0:00</span>
+          <span id="totalTime">0:00</span>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="ctrl-btn" id="shuffleBtn" aria-label="Shuffle">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 3h5v5"/><path d="M4 20L21 3"/><path d="M21 16v5h-5"/><path d="M15 15l6 6"/><path d="M4 4l5 5"/></svg>
+        </button>
+        <button class="ctrl-btn" aria-label="Previous">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zM10 12l9-6v12z"/></svg>
+        </button>
+        <button class="play-btn" id="playBtn" aria-label="Play">
+          <svg id="playIcon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          <svg id="pauseIcon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+        </button>
+        <button class="ctrl-btn" aria-label="Next">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zM5 6l9 6-9 6z"/></svg>
+        </button>
+        <button class="ctrl-btn" id="repeatBtn" aria-label="Repeat">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+        </button>
+      </div>
+
+      <div class="bottom-row">
+        <div class="device-pill">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+          This device
+        </div>
+        <div class="vol-row">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 10v4h4l5 5V5L7 10H3z"/></svg>
+          <div class="vol-bar"><div class="vol-fill"></div></div>
+        </div>
+      </div>
+
+      <div class="lyrics-divider"></div>
+
+      <div class="lyrics-section" id="lyricsSection">
+        <div class="lyrics-header">
+          <span class="lyrics-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55A4 4 0 1014 17V7h4V3h-6z"/></svg>
+            Lyrics
+          </span>
+        </div>
+
+        <div id="lyricsEmpty" class="empty-state" style="display:none;">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+          <div class="empty-title">No lyrics yet for this phase</div>
+          <div class="empty-sub">Add lyrics for this phase in the code, in the "lyrics" field.</div>
+        </div>
+
+        <div id="lyricsReading" style="display:none;">
+          <div class="lyrics-scroll" id="lyricsScroll"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+<!-- /app-shell -->
+
+<audio id="audioEl" preload="none"></audio>
+
+<script>
+  // ---------------- Phase data ----------------
+  const phases = [
+    {
+      id: 'phase1',
+      label: 'Phase I',
+      title: 'Be Naam Rishtaa',
+      teaser: '',
+      artist: 'Parth',
+      duration: 221,
+      gradient: 'linear-gradient(135deg, #1e3d2a 0%, #0f1f14 100%)',
+      photo: 'images/home.jpeg', // paste an image URL here, e.g. 'https://example.com/phase1.jpg'
+      audioSrc: 'audio/song-1.mp3',
+      lyrics: `“Har kahani ka ek naam hota hai…”
+
+“Hamari bhi thi…”
+
+“Bas…”
+
+“Hum kabhi usse de hi nahi paaye.”
+
+Ek kahani hai...
+
+Ek Be-Naam Rishte ki.
+
+Ek ladka tha.
+
+Bahar se dekho toh bilkul normal.
+
+Hasta tha, baatein karta tha, logon ke saath waqt bhi guzarta tha.
+
+Lekin andar…
+
+Andar woh kab ka thak chuka tha.
+
+Zindagi uske liye bas ek routine ban gayi thi.
+
+Subah uthna.
+
+Office jaana.
+
+Ghar aana.
+
+Aur phir wahi khamoshi.
+
+Usne pyaar par vishwas karna bahut pehle hi chhod diya tha.
+
+Usse lagta tha ki kuch logon ki zindagi mein mohabbat sirf filmon tak hi hoti hai.
+
+Aur shayad woh bhi unhi logon mein se ek tha.
+
+Phir…
+
+Ek din.
+
+Bilkul ek aam din ki tarah.
+
+Uski zindagi mein ek ladki aayi.
+
+Na koi dramatic entry.
+
+Na hawaon ka chalna.
+
+Na background music.
+
+Bas…
+
+Ek nazar.
+
+Ek chhota sa eye contact.
+
+Aur shayad wahi woh pal tha…
+
+Jahan se unki kahani likhna shuru hui.
+
+Us ladki mein kuch alag tha.
+
+Woh strong thi.
+
+Independent thi.
+
+Thodi si nonchalant.
+
+Apni hi duniya mein khush rehne wali.
+
+Aur shayad isi wajah se aur bhi khoobsurat.
+
+Usne kabhi notice bhi nahi kiya hoga…
+
+Ki uski ek nazar ne kisi ki poori duniya badal di thi.
+
+Pehle eye contacts hue.
+
+Phir halki si smiles.
+
+Aur dheere dheere…
+
+Baatein.
+
+Roz ki baatein.
+
+Bina kisi wajah ke baatein.
+
+Kab office ka har din usse dekhne ki wajah ban gaya…
+
+Us ladke ko khud bhi pata nahi chala.
+
+Ek taraf woh ladka tha…
+
+Jisne pyaar se umeed chhod di thi.
+
+Aur doosri taraf woh ladki…
+
+Jisne pehle hi keh diya tha…
+
+“Main kabhi pyaar nahi kar sakti.”
+
+Usne ye baat bahut casually kahi thi.
+
+Jaise bas ek fact bata rahi ho.
+
+Lekin us waqt…
+
+Na usse pata tha.
+
+Na us ladke ko.
+
+Ki mohabbat ijazat lekar nahi aati.
+
+Woh bas…
+
+Ho jaati hai.
+
+Din guzarte gaye.
+
+Dosti badhti gayi.
+
+Aur har din ke saath unki baatein bhi.
+
+Ek din…
+
+Bahut himmat jod kar…
+
+Us ladke ne usse date ke liye poocha.
+
+Shayad duniya ke liye woh bas ek chhoti si outing thi.
+
+Lekin us ladke ke liye…
+
+Woh uski zindagi ka sabse khoobsurat decision tha.
+
+Us din…
+
+Usne sirf uske saath waqt nahi bitaya.
+
+Usne apni zindagi ko pehli baar jeeya.
+
+Woh bolti ja rahi thi.
+
+Ek topic khatam nahi hota tha ki doosra shuru ho jaata tha.
+
+Aur woh ladka…
+
+Bas usse dekhta rehta.
+
+Kabhi uski aankhon ko.
+
+Kabhi uski muskaan ko.
+
+Kabhi uske expressions ko.
+
+Usse uski baatein sunna pasand tha.
+
+Shayad isliye nahi ki woh interesting thi.
+
+Balki isliye…
+
+Kyuki woh bol rahi thi.
+
+Aur usse sunna hi uske liye sukoon ban gaya tha.
+
+Us din ke baad…
+
+Jaise waqt tez chalne laga.
+
+Har din ek nayi memory banne laga.
+
+Office ki lift.
+
+Office ka corridor.
+
+Woh Chai ki Tapprii.
+
+Lunch breaks.
+
+Aur woh lamhe…
+
+Jahan dono sirf ek doosre ko dekh kar muskura dete the.
+
+Kabhi kabhi unhe khud bhi lagta…
+
+Jaise woh kisi Bollywood romantic film ke characters hon.
+
+Har chhota moment…
+
+Ek scene ban jaata.
+
+Har nazar…
+
+Ek dialogue ban jaati.
+
+Aur har goodbye…
+
+Agle din ka intezaar.
+
+Woh ladka usse waise treat karta tha…
+
+Jaise purani filmon ka hero apni heroine ko karta hai.
+
+Na dikhawa.
+
+Na expectations.
+
+Bas care.
+
+Bas respect.
+
+Aur har chhoti baat mein uski khushi dhoondhna.
+
+Dheere dheere…
+
+Office mein bhi log notice karne lage.
+
+Dono sirf muskura dete.
+
+Kuch kehte nahi.
+
+Shayad isliye…
+
+Kyuki unke paas us rishte ka koi naam hi nahi tha.
+
+Na woh officially couple the.
+
+Na sirf dost.
+
+Na kuch aur.
+
+Bas…
+
+Ek aisa rishta…
+
+Jise sirf woh dono mehsoos kar sakte the.
+
+Aur shayad isi liye…
+
+Woh itna khoobsurat tha.
+
+Us ladke ko tab tak ye ehsaas bhi nahi hua tha…
+
+Ki woh us ladki se pyaar karne laga hai.
+
+Usse bas itna pata tha…
+
+Ki ab uski har din uski “Thik ho na?, Kuch hua hai kya ?” se chalne laga.
+
+Har office day uski wajah se chhota lagta hai.
+
+Aur har shaam usse bye bolna…
+
+Sabse mushkil.
+
+Uski duniya dheere dheere badal rahi thi.
+
+Aur usse is badlav se mohabbat hone lagi thi.
+
+Usse kya pata tha…
+
+Ki jis kahani ko woh dosti samajh raha hai…
+
+Wahi uski zindagi ki sabse khoobsurat…
+
+Aur sabse mushkil…
+
+Mohabbat banne wali hai.
+
+“Kuch rishte…”
+
+“Pehle dosti bankar aate hain…”
+
+“Phir aadat ban jaate hain…”
+
+“Aur ek din…”
+
+“Pata hi nahi chalta…”
+
+“Kab woh poori zindagi ban gaye.”
+
+To Be Continued…` // paste lyrics here, one line per line, e.g.:
+      // `Line one of the song
+      // Line two of the song
+      // Line three of the song`
+    },
+    {
+      id: 'phase2',
+      label: 'Phase II',
+      title: 'The Love That Hurt Beautifully',
+      teaser: '',
+      artist: 'Parth',
+      duration: 198,
+      gradient: 'linear-gradient(135deg, #2a1e3d 0%, #140f1f 100%)',
+      photo: 'images/car-2.jpg',
+      audioSrc: 'audio/song-2.mp3',
+      lyrics: `"Mohabbat kab aadat ban gayi..."
+
+"Aur aadat kab darr..."
+
+"Ye dono mein se kisi ko bhi pata nahi chala."
+
+Waqt guzarta gaya.
+
+Aur unke beech ka rishta...
+
+Har guzarte din ke saath aur gehra hota gaya.
+
+Ab unhe baat karne ke liye kisi wajah ki zarurat nahi padti thi.
+
+Kabhi office ki chai...
+
+Kabhi Conference Room
+
+Kabhi bina wajah ek chhoti si walk lobby mein.
+
+Aur kabhi bas...
+
+Ek doosre ke paas baith jaana hi kaafi hota tha.
+
+Har din...
+
+Jaise kisi Bollywood love story ka naya scene likha ja raha ho.
+
+Kabhi aankhon hi aankhon mein baatein.
+
+Kabhi ek doosre ko chidhana.
+
+Kabhi bina kuch kahe muskura dena.
+
+Aur kabhi...
+
+Poore office ka un dono ko dekhkar smile karna.
+
+Sabko lagta tha...
+
+Ye dono sirf dost nahi ho sakte.
+
+Aur shayad...
+
+Sab sahi bhi the.
+
+Bas ek kami thi.
+
+Us rishte ka koi naam nahi tha.
+
+Lekin us ladke ke liye...
+
+Naam se zyada ehsaas zaroori tha.
+
+Uske din ki shuruaat ab uske message se hoti thi.
+
+"Thik ho na?"
+
+"Kuch hua hai kya?"
+
+Ye chaar shabd...
+
+Us ladke ke liye sirf concern nahi the.
+
+Ye uska sukoon the.
+
+Usse lagta tha...
+
+Duniya mein koi toh hai...
+
+Jise uske chup ho jaane se bhi farq padta hai.
+
+Lekin...
+
+Har kahani mein ek aisa mod zaroor aata hai...
+
+Jahan muskurahat ke peeche dard chupna shuru ho jaata hai.
+
+Kabhi kabhi...
+
+Woh ladki apne ex ka zikr karti.
+
+Kabhi kisi male friend ki baat karti.
+
+Uske liye...
+
+Woh sirf ek normal conversation hoti thi.
+
+Lekin us ladke ke liye...
+
+Har naam...
+
+Uske dil par ek naya zakhm ban jaata tha.
+
+Phir bhi...
+
+Usne kabhi usse roka nahi.
+
+Kabhi nahi poocha...
+
+"Uska naam mat lo."
+
+Kabhi possessive hone ki koshish nahi ki.
+
+Kabhi apna dard uske saamne rakha hi nahi.
+
+Woh sirf muskura deta.
+
+"Haan..."
+
+"Achha..."
+
+"Phir kya hua?"
+
+Aur call khatam hote hi...
+
+Uski woh muskaan bhi khatam ho jaati.
+
+Raat uski sabse badi dushman ban chuki thi.
+
+Din bhar woh sabke saamne hasta tha.
+
+Lekin raat...
+
+Sirf uski aur uski overthinking ki hoti thi.
+
+Phone ki gallery khulti.
+
+Photos dekhte dekhte muskaan aa jaati.
+
+Phir achanak...
+
+Wahi sawaal.
+
+"Kahin woh mujhe chhod toh nahi degi?"
+
+"Kahin main sirf ek option toh nahi?"
+
+"Kahin uski zindagi mein meri jagah utni khaas nahi jitni maine sochi hai?"
+
+Aur phir...
+
+Neend se pehle...
+
+Aankhon mein aansu aa jaate.
+
+Usne kabhi kisi ko nahi bataya...
+
+Ki woh har raat rota tha.
+
+Usne kabhi us ladki ko bhi nahi bataya.
+
+Kyuki usse darr tha...
+
+Ki kahin apne emotions dikhakar...
+
+Woh usse kho na de.
+
+Isliye...
+
+Usne apna dard chhupa liya.
+
+Aur apni muskaan uske naam kar di.
+
+Rishta aur gehra hota gaya.
+
+Log aur bhi zyada unhe couple samajhne lage.
+
+Saath office mein rehena.
+
+Saath chai peena.
+
+Saath ghoomna.
+
+Ek doosre ko sambhalna.
+
+Sab kuch...
+
+Ek relationship jaisa hi tha.
+
+Bas...
+
+Relationship tha nahi.
+
+Us ladke ne apne andar bahut kuch badal diya tha.
+
+Jo ladka kabhi khud ke liye kuch nahi karta tha...
+
+Ab us ladki ke liye har cheez seekhne laga.
+
+Uski pasand yaad rakhna.
+
+Uski na-pasand samajhna.
+
+Uska mood bina bole padh lena.
+
+Uski ek smile ke liye...
+
+Apna poora din kharab kar dena bhi usse manzoor tha.
+
+Usse sirf uski khushi chahiye thi.
+
+Chahe uske badle...
+
+Usse apni neendein hi kyun na khona pade.
+
+Aur shayad...
+
+Yahin se uski mohabbat aur uski overthinking...
+
+Dono ek saath badhne lage.
+
+Jitna pyaar badhta gaya...
+
+Utna hi usse usse khone ka darr bhi.
+
+Usse lagta tha...
+
+Agar ek din woh chali gayi...
+
+Toh sirf ek insaan nahi jaayega.
+
+Uske saath...
+
+Us ladke ki poori duniya chali jaayegi.
+
+Aur usse ye bilkul nahi pata tha...
+
+Ki jis darr se woh har raat lad raha tha...
+
+Ek din wahi darr...
+
+Uske saamne sach bankar khada hone wala tha.
+
+"Mohabbat kabhi kabhi..."
+
+"Khushi se zyada..."
+
+"Khone ka darr sikha deti hai."
+
+"Aur jab darr..."
+
+"Mohabbat se bada ho jaaye..."
+
+"Tab insaan..."
+
+"Andar hi andar tootne lagta hai."
+
+To Be Continued...`
+    },
+    {
+      id: 'phase3',
+      label: 'Phase III',
+      title: "The Last Chapter of Us",
+      teaser: '',
+      artist: 'Parth',
+      duration: 254,
+      gradient: 'linear-gradient(135deg, #3d2a1e 0%, #1f140f 100%)',
+      photo: 'images/water.jpeg',
+      audioSrc: 'audio/song-3.mp3',
+      lyrics: `"Sabse zyada darr..."
+
+"Humesha usi cheez ka hota hai..."
+
+"Jise hum sabse zyada pyaar karte hain."
+
+Kabhi kabhi...
+
+Insaan jis baat se sabse zyada darta hai...
+
+Zindagi dheere dheere ussi taraf le jaati hai.
+
+Us ladke ke saath bhi kuch aisa hi hua.
+
+Kaafi dino se...
+
+Usse mehsoos hone laga tha...
+
+Ki us ladki ki zindagi mein koi aur bhi tha...
+
+Koi jo uske liye khaas tha.
+
+Shayad usne kabhi poocha nahi.
+
+Shayad poochne ki himmat hi nahi hui.
+
+Kyuki...
+
+Jawab se zyada...
+
+Usse jawab ka darr tha.
+
+Har din woh normal dikhne ki koshish karta.
+
+Hasta.
+
+Usse hasaata.
+
+Uske saath waise hi waqt bitata.
+
+Lekin har raat...
+
+Uska dil usse ek hi sawaal poochta.
+
+"Agar ek din woh chali gayi toh?"
+
+Aur har raat...
+
+Uske paas us sawaal ka koi jawab nahi hota.
+
+Ek din...
+
+Us ladki ko kuch dino ke liye apne ghar jaana tha.
+
+Jaane se pehle...
+
+Dono ne poora din saath bitaya.
+
+Jo shayad dono ko rok lena chahti thi.
+
+Jaane ka waqt aa gaya.
+
+Us ladke ne muskurate hue kaha...
+
+"Hum Apkoh Bohot Miss Karenge !"
+
+Aur us ladki ne bhi muskurakar kaha...
+
+"Jaldi wapas aaungi... bahut miss karungi."
+
+Dono muskura rahe the.
+
+Lekin dono ki aankhen...
+
+Kuch aur hi keh rahi thi.
+
+Distance sirf shahron ka nahi tha.
+
+Ab har din...
+
+Us ladke ki overthinking aur gehri hoti ja rahi thi.
+
+Calls hoti thi.
+
+Messages bhi.
+
+Lekin kabhi kabhi...
+
+Phone ke us paar ki khamoshi...
+
+Hazaar alfaazon se zyada dard deti hai.
+
+Phir...
+
+Ek din...
+
+Usse woh sach pata chala...
+
+Jis sach se woh itne dino se bhaag raha tha.
+
+Usse mehsoos hua...
+
+Ki shayad...
+
+Woh uski duniya ka sab kuch nahi tha.
+
+Bas...
+
+Ek hissa tha.
+
+Aur us pal...
+
+Jaise uske andar sab kuch toot gaya.
+
+Uski saansein tez ho gayi.
+
+Haath kaanpne lage.
+
+Aankhon ke saamne sab dhundhla sa ho gaya.
+
+Aansu itne the...
+
+Ki uski nazar dhundhli pad gayi.
+
+Usse yaad aane lage...
+
+Har woh lamha...
+
+Jo usne uske saath jeeya tha.
+
+Pehla eye contact.
+
+Pehli date.
+
+Office ke woh blushes.
+
+Conference room ki baatein.
+
+Chai ki tapri.
+
+Aur woh saare Bollywood wale moments...
+
+Jo usne hamesha ke liye apne dil mein sambhal kar rakhe the.
+
+Usne pehli baar...
+
+Apna darr chhupaya nahi.
+
+Usne usse sab bata diya.
+
+Apni overthinking.
+
+Apna darr.
+
+Aur woh saare aansu...
+
+Jo itne mahino se usne sirf takiye ke saamne bahaaye the.
+
+Phone ke us paar...
+
+Khamoshi thi.
+
+Phir...
+
+Us khamoshi ke saath...
+
+Aansu bhi the.
+
+Woh ladki bhi ro rahi thi.
+
+Pehli baar...
+
+Dono ek doosre ko sambhalne ki koshish kar rahe the.
+
+Jabki dono khud toot rahe the.
+
+Us baat-cheet ne...
+
+Sab kuch badal diya.
+
+Ab un dono ke beech woh pehle jaisi masoomiyat nahi rahi thi.
+
+Mohabbat wahi thi.
+
+Ehsaas wahi the.
+
+Lekin...
+
+Haqeeqat badal chuki thi.
+
+Dono ne milne ka faisla kiya.
+
+Shayad...
+
+Aakhri baar.
+
+Jab woh mile...
+
+Kisi ne kuch nahi kaha.
+
+Bas...
+
+Ek lamba sa hug.
+
+Aisa hug...
+
+Jisme shayad dono apni poori kahani mehsoos kar rahe the.
+
+Jaise waqt wahi ruk gaya ho.
+
+Us din...
+
+Unhone phir se muskuraane ki koshish ki.
+
+Waise hi...
+
+Jaise pehle karte the.
+
+Waise hi...
+
+Jaise kuch badla hi na ho.
+
+Ek baar phir...
+
+Apni Bollywood wali kahani jeene ki koshish ki.
+
+Lekin dono jaante the...
+
+Ki har film ka ek last scene hota hai.
+
+Aur shayad...
+
+Ye unka tha.
+
+Usi din...
+
+Us ladki ne bhi apna dil khol diya.
+
+"Mujhe bhi tumse pyaar hai"
+
+"Bas..."
+
+"Main pyaar se bahut darti thi."
+
+Us pal...
+
+Us ladke ko samajh hi nahi aaya...
+
+Khush ho...
+
+Ya aur toot jaaye.
+
+Mohabbat dono taraf thi.
+
+Lekin...
+
+Zindagi hamesha sirf mohabbat se nahi chalti.
+
+Bahut der tak baat hui.
+
+Bahut aansu bahe.
+
+Aur aakhir mein...
+
+Dono ne ek faisla liya.
+
+Ek doosre se door rehne ka.
+
+Ek doosre ki zindagi se nahi...
+
+Bas...
+
+Ek doosre ke dard se.
+
+Woh aasaan nahi tha.
+
+Har subah...
+
+Aadat yaad aati thi.
+
+Har shaam...
+
+Kami mehsoos hoti thi.
+
+Kabhi kabhi...
+
+Ek message aa jaata.
+
+Kabhi ek call.
+
+Bas itna...
+
+Ki dono jaan sakein...
+
+Ki saamne wala theek hai.
+
+Lekin...
+
+Pehle jaisa kuch bhi nahi raha.
+
+Us ladke ne kabhi usse kam pyaar nahi kiya.
+
+Aur shayad...
+
+Kabhi karega bhi nahi.
+
+Uski khushi ki dua karna kabhi nahi chhoda.
+
+Aaj bhi...
+
+Jab woh conference ki khali chair dekhta hai...
+
+Ya office ke kisi khaali corridor se guzarta hai...
+
+Usse lagta hai...
+
+Jaise woh bas usse call karegi aur humesha ki tarah woh kahega...
+
+"Thik ho na?"
+
+Aur woh hamesha ki tarah muskura kar kahegi...
+
+"Haan..."
+
+Jabki dono jaante honge...
+
+Ki us jawab mein kitne jhooth chhupe hain.
+
+"Kuch log..."
+
+"Hamari zindagi mein aate hain..."
+
+"Humein poora karne ke liye nahi..."
+
+"Humein badal dene ke liye."
+
+"Aur kuch mohabbatein..."
+
+"Mukammal hokar bhi..."
+
+"Saath nahi chal paati."
+
+"Ye kahani khatam nahi hui..."
+
+"Bas..."
+
+"Ek Be-Naam Rishte ki tarah..."
+
+"Dil ke kisi kone mein hamesha ke liye reh gayi."`
+    }
+  ];
+
+  let currentPhase = null;
+
+  // ---------------- Screen navigation ----------------
+  const screenIntro = document.getElementById('screenIntro');
+  const screenPhases = document.getElementById('screenPhases');
+  const screenPlayer = document.getElementById('screenPlayer');
+
+  function showScreen(el) {
+    [screenIntro, screenPhases, screenPlayer].forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  document.getElementById('beginBtn').addEventListener('click', () => showScreen(screenPhases));
+  document.getElementById('backBtn').addEventListener('click', () => {
+    setPlaying(false);
+    showScreen(screenPhases);
+  });
+
+  // ---------------- Build phase cards ----------------
+  const phaseList = document.getElementById('phaseList');
+  phases.forEach(p => {
+    const card = document.createElement('button');
+    card.className = 'phase-card';
+    const artInner = p.photo
+      ? `<img src="${p.photo}" alt="${p.title} cover" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">`
+      : `<svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" style="color:#eaf6ee; opacity:0.7;"><path d="M12 3v10.55A4 4 0 1014 17V7h4V3h-6z"/></svg>`;
+    card.innerHTML = `
+      <div class="phase-art" style="background:${p.gradient}">
+        ${artInner}
+      </div>
+      <div class="phase-info">
+        <div class="phase-label">${p.label}</div>
+        <div class="phase-title">${p.title}</div>
+        <div class="phase-teaser">${p.teaser}</div>
+      </div>
+      <div class="phase-arrow">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+      </div>
+    `;
+    card.addEventListener('click', () => openPhase(p));
+    phaseList.appendChild(card);
+  });
+
+  function openPhase(p) {
+    currentPhase = p;
+    document.getElementById('phaseLabel').textContent = p.label;
+    document.getElementById('trackTitle').textContent = p.title;
+    document.getElementById('trackArtist').textContent = p.artist;
+    const artWrap = document.getElementById('albumArtWrap');
+    if (p.photo) {
+      artWrap.style.background = 'none';
+      artWrap.innerHTML = `<img src="${p.photo}" alt="${p.title} cover" style="width:100%;height:100%;object-fit:cover;">`;
+    } else {
+      artWrap.style.background = p.gradient;
+      artWrap.innerHTML = `<svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor" opacity="0.6" style="color:#eaf6ee;"><path d="M12 3v10.55A4 4 0 1014 17V7h4V3h-6z"/></svg>`;
+    }
+    audioEl.src = p.audioSrc || '';
+    totalSeconds = p.duration;
+    currentSeconds = 0;
+    document.getElementById('totalTime').textContent = formatTime(totalSeconds);
+    updateProgress();
+    setPlaying(false);
+    showScreen(screenPlayer);
+    loadLyrics();
+  }
+
+  // ---------------- Player logic ----------------
+  const playBtn = document.getElementById('playBtn');
+  const playIcon = document.getElementById('playIcon');
+  const pauseIcon = document.getElementById('pauseIcon');
+  const likeBtn = document.getElementById('likeBtn');
+  const shuffleBtn = document.getElementById('shuffleBtn');
+  const repeatBtn = document.getElementById('repeatBtn');
+  const progressBar = document.getElementById('progressBar');
+  const progressFill = document.getElementById('progressFill');
+  const progressHandle = document.getElementById('progressHandle');
+  const curTimeEl = document.getElementById('curTime');
+  const totalTimeEl = document.getElementById('totalTime');
+  const albumArtWrap = document.getElementById('albumArtWrap');
+  const audioEl = document.getElementById('audioEl');
+  const lyricsSection = document.getElementById('lyricsSection');
+
+  let playing = false;
+  let totalSeconds = 0;
+  let currentSeconds = 0;
+  let timer = null;
+
+  function formatTime(s) {
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60).toString().padStart(2, '0');
+    return `${m}:${sec}`;
+  }
+
+  function updateProgress() {
+    const pct = totalSeconds ? Math.min(100, (currentSeconds / totalSeconds) * 100) : 0;
+    progressFill.style.width = pct + '%';
+    progressHandle.style.left = pct + '%';
+    curTimeEl.textContent = formatTime(currentSeconds);
+  }
+
+  function tick() {
+    if (currentSeconds < totalSeconds) {
+      currentSeconds += 1;
+      updateProgress();
+    } else {
+      setPlaying(false);
+    }
+  }
+
+  function setPlaying(state) {
+    playing = state;
+    playIcon.style.display = playing ? 'none' : 'block';
+    pauseIcon.style.display = playing ? 'block' : 'none';
+    playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+    lyricsSection.classList.toggle('attention', playing);
+
+    if (playing) {
+      if (audioEl.src) {
+        audioEl.play().catch(() => {});
+      }
+      timer = setInterval(tick, 1000);
+    } else {
+      if (audioEl.src) audioEl.pause();
+      clearInterval(timer);
+    }
+  }
+
+  playBtn.addEventListener('click', () => setPlaying(!playing));
+  likeBtn.addEventListener('click', () => likeBtn.classList.toggle('liked'));
+  shuffleBtn.addEventListener('click', () => shuffleBtn.classList.toggle('active'));
+  repeatBtn.addEventListener('click', () => repeatBtn.classList.toggle('active'));
+
+  progressBar.addEventListener('click', (e) => {
+    const rect = progressBar.getBoundingClientRect();
+    const pct = (e.clientX - rect.left) / rect.width;
+    currentSeconds = Math.max(0, Math.min(totalSeconds, pct * totalSeconds));
+    if (audioEl.src) audioEl.currentTime = currentSeconds;
+    updateProgress();
+  });
+
+  // ---------------- Lyrics logic ----------------
+  const lyricsEmpty = document.getElementById('lyricsEmpty');
+  const lyricsReading = document.getElementById('lyricsReading');
+  const lyricsScroll = document.getElementById('lyricsScroll');
+
+  let currentLyricsLines = [];
+  let lastLyricsIndex = -1;
+
+  function showOnly(el) {
+    [lyricsEmpty, lyricsReading].forEach(e => e.style.display = 'none');
+    el.style.display = (el === lyricsEmpty) ? 'flex' : 'block';
+  }
+
+  function renderLyricsLines(text) {
+    currentLyricsLines = text.split('\n').filter(l => l.trim().length > 0);
+    lyricsScroll.innerHTML = '';
+    currentLyricsLines.forEach((line, i) => {
+      const div = document.createElement('div');
+      div.className = 'lyrics-line' + (i === 0 ? ' active' : '');
+      div.textContent = line;
+      div.dataset.index = i;
+      div.addEventListener('click', () => setActiveLine(i));
+      lyricsScroll.appendChild(div);
+    });
+  }
+
+  function setActiveLine(i) {
+    const items = lyricsScroll.querySelectorAll('.lyrics-line');
+    items.forEach(el => el.classList.remove('active'));
+    if (items[i]) {
+      items[i].classList.add('active');
+      items[i].scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+  }
+
+  function loadLyrics() {
+    lastLyricsIndex = -1;
+    const text = (currentPhase && currentPhase.lyrics) ? currentPhase.lyrics.trim() : '';
+    if (text) {
+      renderLyricsLines(text);
+      showOnly(lyricsReading);
+    } else {
+      showOnly(lyricsEmpty);
+    }
+  }
+</script>
+
+</body>
+</html>
